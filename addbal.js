@@ -44,13 +44,14 @@ Strava.Charts.Activities.BasicAnalysisStacked.prototype.handleStreamsReady = asy
   await sauce.analysis.prepared;
   await fetchedLRData;
   const stream = 'leftrightbalance';
+  if (!this.streamTypes.includes(stream)) {
   const data = this.context.streamsContext.streams.getStream(stream);
-  Strava.I18n.Locales.DICTIONARY.strava.charts.activities.chart_context[stream] = 'Équilibre G/D';
   this.context.streamsContext.data.add(stream, data);
   this.streamTypes.push(stream);
   const formatter=LeftRightPowerBalanceFormatter;
   this.context.sportObject().streamTypes[stream] = { formatter };
-
+    Strava.I18n.Locales.DICTIONARY.strava.charts.activities.chart_context[stream] = 'Équilibre G/D';
+  }
   await handleStreamsReady.apply(this, arguments);
 }
 
