@@ -36,7 +36,6 @@ class LeftRightPowerBalanceFormatter extends Strava.I18n.ScalarFormatter  {
 const fetchedLRData = fetchAndLoadLRData();
 const handleStreamsReady = Strava.Charts.Activities.BasicAnalysisStacked.prototype.handleStreamsReady;
 Strava.Charts.Activities.BasicAnalysisStacked.prototype.handleStreamsReady = async function() {
-  await sauce.analysis.prepared;
   await fetchedLRData;
   const stream = 'leftrightbalance';
   if (!this.streamTypes.includes(stream)) {
