@@ -9,13 +9,9 @@ async function parseFitFile(arrayBuffer) {
     elapsedRecordField: true,
     mode: 'list'
   });
-  return new Promise(function (resolve, reject) {
-    myFitParser.parse(arrayBuffer, function(error, data) {
-      if(error) {
-        reject(error);
-        return
-      }
-      resolve(data);
+  return new Promise((resolve, reject) => {
+    myFitParser.parse(arrayBuffer, (error, data) => {
+        error ? reject(error) : resolve(data);
     });
   });
 }
@@ -27,7 +23,6 @@ async function fetchAndLoadLRData() {
   const LRbal = parsedFitFile.records.map(a => (a?.left_right_balance && a.left_right_balance.value !== 127) ? (a.left_right_balance.right ? 100 - a.left_right_balance.value : a.left_right_balance.value) : 50);
   pageView.streams().streamData.data.leftrightbalance = LRbal;
 }
-
 
 class LeftRightPowerBalanceFormatter extends Strava.I18n.ScalarFormatter  {
   constructor() {
@@ -45,11 +40,11 @@ Strava.Charts.Activities.BasicAnalysisStacked.prototype.handleStreamsReady = asy
   await fetchedLRData;
   const stream = 'leftrightbalance';
   if (!this.streamTypes.includes(stream)) {
-  const data = this.context.streamsContext.streams.getStream(stream);
-  this.context.streamsContext.data.add(stream, data);
-  this.streamTypes.push(stream);
-  const formatter=LeftRightPowerBalanceFormatter;
-  this.context.sportObject().streamTypes[stream] = { formatter };
+    const data = this.context.streamsContext.streams.getStream(stream);
+    this.context.streamsContext.data.add(stream, data);
+    this.streamTypes.push(stream);
+    const formatter=LeftRightPowerBalanceFormatter;
+    this.context.sportObject().streamTypes[stream] = { formatter };
     Strava.I18n.Locales.DICTIONARY.strava.charts.activities.chart_context[stream] = 'Équilibre G/D';
   }
   await handleStreamsReady.apply(this, arguments);
