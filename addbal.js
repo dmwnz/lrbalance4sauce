@@ -28,15 +28,9 @@ async function parseFitFile(arrayBuffer) {
   });
 }
 
-async function fetchAndLoadLRData() {
-  if (!pageView.isOwner()) {
-    throw Error('Activity doesn\'t belong to logged-in athlete')
-  }
-  const fitResponse = await fetch(`https://www.strava.com/activities/${pageView.activity().id}/export_original`);
-  const arrayBuffer = await fitResponse.arrayBuffer();
-  const parsedFitFile = await parseFitFile(arrayBuffer);
+function extractLRBalFromFitData(fitData) {
   var hasLRBalance = false;
-  const LRbal = parsedFitFile.records.map(a => {
+  const LRbal = fitData.records.map(a => {
     const bal = a?.left_right_balance;
     hasLRBalance = hasLRBalance || (bal!=undefined);
     return bal && bal.value !== 127 ? (bal.right ? 100 - bal.value : bal.value) : 50;
@@ -44,7 +38,19 @@ async function fetchAndLoadLRData() {
   if (!hasLRBalance) {
     throw Error('No L/R balance data found in original FIT file');
   }
-  pageView.streams().streamData.data.leftrightbalance = LRbal;
+  return LRbal;
+}
+
+async function fetchAndLoadLRData() {
+  if (!pageView.isOwner()) {
+    throw Error('Activity doesn\'t belong to logged-in athlete')
+  }
+  const fitResponse = await fetch(`https://www.strava.com/activities/${pageView.activity().id}/export_original`);
+  const arrayBuffer = await fitResponse.arrayBuffer();
+  const parsedFitFile = await parseFitFile(arrayBuffer);
+  const LRBal = extractLRBalFromFitData(parsedFitFile);
+  
+  pageView.streams().streamData.data.leftrightbalance = LRBal;
 }
 
 class LeftRightPowerBalanceFormatter extends Strava.I18n.ScalarFormatter  {
