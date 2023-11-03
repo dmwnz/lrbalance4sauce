@@ -1,14 +1,26 @@
 import { default as FitParser } from 'https://dmwnz.github.io/damso-analyzer/fit-parser-1.8.4/dist/fit-parser.js'
 
+function checkFitSanity(buffer) {
+  var blob = new Uint8Array(buffer);
+  if (blob.length < 12) {
+    throw Error('File to small to be a FIT file');
+  }
+  var headerLength = blob[0];
+  if (headerLength !== 14 && headerLength !== 12) {
+    throw Error('Incorrect header size');
+  }
+  var fileTypeString = '';
+  for (var i = 8; i < 12; i++) {
+    fileTypeString += String.fromCharCode(blob[i]);
+  }
+  if (fileTypeString !== '.FIT') {
+    throw Error('Missing \'.FIT\' in header', {});
+  }
+}
+
 async function parseFitFile(arrayBuffer) {
-  const myFitParser = new FitParser({
-    force: true,
-    speedUnit: 'km/h',
-    lengthUnit: 'km',
-    temperatureUnit: 'kelvin',
-    elapsedRecordField: true,
-    mode: 'list'
-  });
+  checkFitSanity(arrayBuffer);
+  const myFitParser = new FitParser();
   return new Promise((resolve, reject) => {
     myFitParser.parse(arrayBuffer, (error, data) => {
         error ? reject(error) : resolve(data);
