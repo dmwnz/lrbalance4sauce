@@ -29,10 +29,21 @@ async function parseFitFile(arrayBuffer) {
 }
 
 async function fetchAndLoadLRData() {
+  if (!pageView.isOwner()) {
+    throw Error('Activity doesn\'t belong to logged-in athlete')
+  }
   const fitResponse = await fetch(`https://www.strava.com/activities/${pageView.activity().id}/export_original`);
   const arrayBuffer = await fitResponse.arrayBuffer();
   const parsedFitFile = await parseFitFile(arrayBuffer);
-  const LRbal = parsedFitFile.records.map(a => (a?.left_right_balance && a.left_right_balance.value !== 127) ? (a.left_right_balance.right ? 100 - a.left_right_balance.value : a.left_right_balance.value) : 50);
+  var hasLRBalance = false;
+  const LRbal = parsedFitFile.records.map(a => {
+    const bal = a?.left_right_balance;
+    hasLRBalance = hasLRBalance || (bal!=undefined);
+    return bal && bal.value !== 127 ? (bal.right ? 100 - bal.value : bal.value) : 50;
+  });
+  if (!hasLRBalance) {
+    throw Error('No L/R balance data found in original FIT file');
+  }
   pageView.streams().streamData.data.leftrightbalance = LRbal;
 }
 
@@ -41,22 +52,28 @@ class LeftRightPowerBalanceFormatter extends Strava.I18n.ScalarFormatter  {
     super('percent', 0);
   }
   format(val) {
-    return `${super.format(val)}/${super.format(100-val)}`;
+    return `${super.format(val)}/${super.format(100-val)}`; 
   }
 }
 
 const fetchedLRData = fetchAndLoadLRData();
+fetchedLRData.catch(_=>undefined);
 const handleStreamsReady = Strava.Charts.Activities.BasicAnalysisStacked.prototype.handleStreamsReady;
 Strava.Charts.Activities.BasicAnalysisStacked.prototype.handleStreamsReady = async function() {
-  await fetchedLRData;
-  const stream = 'leftrightbalance';
-  if (!this.streamTypes.includes(stream)) {
+  try {
+    await fetchedLRData;
+    const stream = 'leftrightbalance';
     const data = this.context.streamsContext.streams.getStream(stream);
-    this.context.streamsContext.data.add(stream, data);
-    this.streamTypes.push(stream);
-    const formatter=LeftRightPowerBalanceFormatter;
-    this.context.sportObject().streamTypes[stream] = { formatter };
-    Strava.I18n.Locales.DICTIONARY.strava.charts.activities.chart_context[stream] = 'Équilibre G/D';
+    if (data && !this.streamTypes.includes(stream)) {
+      this.context.streamsContext.data.add(stream, data);
+      this.streamTypes.push(stream);
+      const formatter=LeftRightPowerBalanceFormatter;
+      this.context.sportObject().streamTypes[stream] = { formatter };
+      Strava.I18n.Locales.DICTIONARY.strava.charts.activities.chart_context[stream] = 'Équilibre G/D';
+    }
+  }
+  catch (error) {
+    console.error(`Could not load L/R balance data: ${error}`);
   }
   await handleStreamsReady.apply(this, arguments);
 }
