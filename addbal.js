@@ -33,21 +33,25 @@ req.onload = (event) => {
           }
           return 50});
 
-        class WholePercentFormatter extends Strava.I18n.ScalarFormatter  {
+        class LeftRightPowerBalanceFormatter extends Strava.I18n.ScalarFormatter  {
           constructor() {
             super('percent', 0)
           }
-        
+          format(val) {
+            return `${super.format(val)}/${super.format(100-val)}`
+          }
+        }
+
         const handleStreamsReady = Strava.Charts.Activities.BasicAnalysisStacked.prototype.handleStreamsReady
 
         Strava.Charts.Activities.BasicAnalysisStacked.prototype.handleStreamsReady = async function() {
           await sauce.analysis.prepared;
           const stream = 'leftrightbalance';
-              const data = this.context.streamsContext.streams.getStream(stream);
+          const data = this.context.streamsContext.streams.getStream(stream);
           Strava.I18n.Locales.DICTIONARY.strava.charts.activities.chart_context[stream] = 'Équilibre G/D';
-                  this.context.streamsContext.data.add(stream, data);
-              this.streamTypes.push(stream);
-          const formatter=WholePercentFormatter;
+          this.context.streamsContext.data.add(stream, data);
+          this.streamTypes.push(stream);
+          const formatter=LeftRightPowerBalanceFormatter;
           this.context.sportObject().streamTypes[stream] = { formatter };
 
           await handleStreamsReady.apply(this, arguments);
