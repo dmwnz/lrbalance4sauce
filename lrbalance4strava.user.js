@@ -1,15 +1,15 @@
 // ==UserScript==
-// @name     lrbalance4sauce
+// @name     lrbalance4strava
 // @version  1
 // @include  https://www.strava.com/activities/*
 // ==/UserScript==
 
 var q = document.createElement('script');
 q.type="module"; 
-//q.src="https://dmwnz.github.io/lrbalance4sauce/addbal.js";
+//q.src="https://dmwnz.github.io/lrbalance4strava/addbal.js";
 
 const req = new XMLHttpRequest();
-req.open('GET', "https://dmwnz.github.io/lrbalance4sauce/addbal.js", true);
+req.open('GET', "https://dmwnz.github.io/lrbalance4strava/addbal.js", true);
 req.onload = (event) => {
   q.text = req.response;
 }
