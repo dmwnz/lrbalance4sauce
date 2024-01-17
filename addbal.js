@@ -69,9 +69,23 @@ Strava.Charts.Activities.BasicAnalysisStacked.prototype.handleStreamsReady = asy
   try {
     await fetchedLRData;
     const stream = 'leftrightbalance';
-    const data = this.context.streamsContext.streams.getStream(stream);
-    if (data && !this.streamTypes.includes(stream)) {
-      this.context.streamsContext.data.add(stream, data);
+    const lrbalanceStream = this.context.streamsContext.streams.getStream(stream);
+    const wattsStream = this.context.streamsContext.streams.getStream('watts');
+    if (lrbalanceStream && !this.streamTypes.includes(stream)) {  
+      const getIntervalAverage = this.context.streamsContext.data.getIntervalAverage;
+      this.context.streamsContext.data.getIntervalAverage = function (t, e, i) {
+        if(t == 'leftrightbalance') {
+          e = e ? parseInt(e) : 0;
+          i = i ? parseInt(i) : lrbalanceStream.length - 1;
+          const balanceSliced = lrbalanceStream.slice(e, + i + 1 || 9000000000),
+                wattsSliced = wattsStream.slice(e, + i + 1 || 9000000000);
+          const sumProducts = balanceSliced.reduce((acc, value, index) => acc + value * wattsSliced[index], 0),
+                sumWeights = wattsSliced.reduce((acc, weight) => acc + weight, 0);
+          return sumProducts / sumWeights;
+        }
+        return getIntervalAverage.call(this, t, e, i);
+      }
+      this.context.streamsContext.data.add(stream, lrbalanceStream);
       this.streamTypes.push(stream);
       const formatter=LeftRightPowerBalanceFormatter;
       this.context.sportObject().streamTypes[stream] = { formatter };
