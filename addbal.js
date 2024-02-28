@@ -33,7 +33,7 @@ function extractLRBalFromFitData(fitData) {
   const LRbal = fitData.records.map(a => {
     const bal = a?.left_right_balance;
     hasLRBalance = hasLRBalance || (bal!=undefined);
-    return bal && bal.value !== 127 ? (bal.right ? 100 - bal.value : bal.value) : 50;
+    return bal && bal.value !== 127 ? (100 - bal.value) : 50;
   });
   if (!hasLRBalance) {
     throw Error('No L/R balance data found in original FIT file');
